@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisiWASM - 文件到媒体转换器</title>
+    <link rel="stylesheet" href="./static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VisiWASM</h1>
+            <p class="subtitle">文件到媒体无损转换器</p>
+        </header>
+        <main>
+            <div class="card">
+                <h2 class="card-title">文件转换</h2>
+                <p>将任意文件无损转换为图像或音频格式，避免传统Base64编码的数据膨胀问题。</p>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📁</div>
+                    <p>拖拽文件到此处或点击选择文件</p>
+                    <button class="btn btn-primary" id="selectFileBtn">选择文件</button>
+                    <input type="file" id="fileInput" class="file-input">
+                </div>
+                <div class="format-selector">
+                    <label for="targetFormat">目标格式:</label>
+                    <select id="targetFormat">
+                        <option value="image">图像</option>
+                        <option value="audio">音频 (WAV)</option>
+                        <option value="video">视频 (计划中)</option>
+                    </select>
+                </div>
+                <div class="image-format-selector" id="imageFormatSelector">
+                    <label for="imageFormat">图像格式:</label>
+                    <select id="imageFormat">
+                        <option value="png">PNG</option>
+                        <option value="bmp">BMP</option>
+                        <option value="jpeg">JPEG</option>
+                    </select>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="convertBtn" disabled>转换文件</button>
+                </div>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="status" id="status"></div>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>正在处理文件...</p>
+                </div>
+                <div class="preview-container">
+                    <h3>原始文件预览</h3>
+                    <div id="filePreview"></div>
+                    <h3>转换后媒体预览</h3>
+                    <img id="imagePreview" alt="图像预览">
+                    <audio id="audioPlayer" controls></audio>
+                    <video id="videoPlayer" controls></video>
+                </div>
+                <div class="download-section" id="downloadSection">
+                    <button class="btn btn-success" id="downloadBtn">下载转换后的文件</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">媒体还原</h2>
+                <p>将转换后的媒体文件还原为原始文件。</p>
+                <div class="upload-area" id="restoreUploadArea">
+                    <div class="upload-icon">📁</div>
+                    <p>拖拽媒体文件到此处或点击选择文件</p>
+                    <button class="btn btn-primary" id="selectRestoreFileBtn">选择媒体文件</button>
+                    <input type="file" id="restoreFileInput" class="file-input">
+                </div>
+                <div class="format-selector">
+                    <label for="restoreMediaType">媒体类型:</label>
+                    <select id="restoreMediaType">
+                        <option value="image">图像</option>
+                        <option value="audio">音频 (WAV)</option>
+                    </select>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-warning" id="restoreBtn" disabled>还原文件</button>
+                </div>
+                <div class="progress-container" id="restoreProgressContainer">
+                    <div class="progress-bar" id="restoreProgressBar"></div>
+                </div>
+                <div class="status" id="restoreStatus"></div>
+                <div class="loading" id="restoreLoading">
+                    <div class="spinner"></div>
+                    <p>正在还原文件...</p>
+                </div>
+                <div class="download-section" id="restoreDownloadSection">
+                    <button class="btn btn-success" id="restoreDownloadBtn">下载还原的文件</button>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="card-title">如何工作</h2>
+                <p>VisiWASM 使用创新的方法将文件数据直接映射到媒体格式：</p>
+                <ul>
+                    <li><strong>无数据膨胀</strong> - 相比 Base64 编码，避免了 33% 的数据膨胀</li>
+                    <li><strong>双向转换</strong> - 支持文件到媒体和媒体到文件的双向转换</li>
+                    <li><strong>跨平台兼容</strong> - 生成的图像和音频文件在所有设备上都有良好支持</li>
+                    <li><strong>无损转换</strong> - 使用 PNG、BMP、JPEG 和 WAV 格式确保数据完整性</li>
+                    <li><strong>多种格式支持</strong> - 支持多种图像和音频格式</li>
+                </ul>
+            </div>
+        </main>
+        <footer>
+            <p>VisiWASM - 文件到媒体转换器 | 使用 Rust + WebAssembly 构建</p>
+        </footer>
+    </div>
+    <script type="module">
+        import init, { MediaConverter } from './pkg/visi_wasm_lib.js';
+        
+        let selectedFile = null;
+        let convertedMediaData = null;
+        let convertedMediaType = null;
+        let filePreview = null;
+        let mediaConverter = null;
+        let restoreSelectedFile = null;
+        let restoredFileData = null;
+        
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const selectFileBtn = document.getElementById('selectFileBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const targetFormat = document.getElementById('targetFormat');
+        const imageFormatSelector = document.getElementById('imageFormatSelector');
+        const imageFormat = document.getElementById('imageFormat');
+        const imagePreview = document.getElementById('imagePreview');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadSection = document.getElementById('downloadSection');
+        const statusEl = document.getElementById('status');
+        const loadingEl = document.getElementById('loading');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const filePreviewEl = document.getElementById('filePreview');
+        
+        const restoreUploadArea = document.getElementById('restoreUploadArea');
+        const restoreFileInput = document.getElementById('restoreFileInput');
+        const selectRestoreFileBtn = document.getElementById('selectRestoreFileBtn');
+        const restoreBtn = document.getElementById('restoreBtn');
+        const restoreMediaType = document.getElementById('restoreMediaType');
+        const restoreDownloadSection = document.getElementById('restoreDownloadSection');
+        const restoreDownloadBtn = document.getElementById('restoreDownloadBtn');
+        const restoreStatusEl = document.getElementById('restoreStatus');
+        const restoreLoadingEl = document.getElementById('restoreLoading');
+        const restoreProgressContainer = document.getElementById('restoreProgressContainer');
+        const restoreProgressBar = document.getElementById('restoreProgressBar');
+        
+        async function initWasm() {
+            try {
+                showStatus('正在加载WASM模块...', 'info');
+                await init();
+                mediaConverter = new MediaConverter();
+                showStatus('WASM模块加载成功', 'success');
+                console.log('WASM module loaded successfully');
+            } catch (error) {
+                console.error('Failed to load WASM module:', error);
+                showStatus('WASM模块加载失败: ' + error.message, 'error');
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', initWasm);
+        
+        selectFileBtn.addEventListener('click', () => {
+            fileInput.click();
+        });
+        fileInput.addEventListener('change', (event) => {
+            if (event.target.files.length > 0) {
+                selectedFile = event.target.files[0];
+                handleFileSelect(selectedFile);
+            }
+        });
+        uploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        uploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (event.dataTransfer.files.length > 0) {
+                selectedFile = event.dataTransfer.files[0];
+                handleFileSelect(selectedFile);
+            }
+        });
+        targetFormat.addEventListener('change', () => {
+            if (targetFormat.value === 'image') {
+                imageFormatSelector.style.display = 'block';
+            } else {
+                imageFormatSelector.style.display = 'none';
+            }
+        });
+        convertBtn.addEventListener('click', convertFile);
+        downloadBtn.addEventListener('click', downloadConvertedMedia);
+        
+        selectRestoreFileBtn.addEventListener('click', () => {
+            restoreFileInput.click();
+        });
+        restoreFileInput.addEventListener('change', (event) => {
+            if (event.target.files.length > 0) {
+                restoreSelectedFile = event.target.files[0];
+                handleRestoreFileSelect(restoreSelectedFile);
+            }
+        });
+        restoreUploadArea.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            restoreUploadArea.classList.add('dragover');
+        });
+        restoreUploadArea.addEventListener('dragleave', () => {
+            restoreUploadArea.classList.remove('dragover');
+        });
+        restoreUploadArea.addEventListener('drop', (event) => {
+            event.preventDefault();
+            restoreUploadArea.classList.remove('dragover');
+            if (event.dataTransfer.files.length > 0) {
+                restoreSelectedFile = event.dataTransfer.files[0];
+                handleRestoreFileSelect(restoreSelectedFile);
+            }
+        });
+        restoreBtn.addEventListener('click', restoreFile);
+        restoreDownloadBtn.addEventListener('click', downloadRestoredFile);
+        
+        function handleFileSelect(file) {
+            showStatus(`已选择文件: ${file.name} (${formatFileSize(file.size)})`, 'info');
+            convertBtn.disabled = false;
+            resetPreviews();
+            
+            showFilePreview(file);
+        }
+        
+        function handleRestoreFileSelect(file) {
+            showRestoreStatus(`已选择媒体文件: ${file.name} (${formatFileSize(file.size)})`, 'info');
+            restoreBtn.disabled = false;
+            
+            if (file.type.startsWith('image/')) {
+                restoreMediaType.value = 'image';
+            } else if (file.type.startsWith('audio/')) {
+                restoreMediaType.value = 'audio';
+            }
+        }
+        
+        function showFilePreview(file) {
+            filePreviewEl.innerHTML = '';
+            if (file.type.startsWith('image/')) {
+                const img = document.createElement('img');
+                img.src = URL.createObjectURL(file);
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '200px';
+                filePreviewEl.appendChild(img);
+            } else if (file.type.startsWith('audio/')) {
+                const audio = document.createElement('audio');
+                audio.src = URL.createObjectURL(file);
+                audio.controls = true;
+                audio.style.width = '100%';
+                filePreviewEl.appendChild(audio);
+            } else if (file.type.startsWith('video/')) {
+                const video = document.createElement('video');
+                video.src = URL.createObjectURL(file);
+                video.controls = true;
+                video.style.maxWidth = '100%';
+                video.style.maxHeight = '200px';
+                filePreviewEl.appendChild(video);
+            } else if (file.type.startsWith('text/')) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const pre = document.createElement('pre');
+                    pre.textContent = e.target.result.substring(0, 500); 
+                    if (e.target.result.length > 500) {
+                        pre.textContent += '...';
+                    }
+                    pre.style.maxHeight = '200px';
+                    pre.style.overflow = 'auto';
+                    filePreviewEl.appendChild(pre);
+                };
+                reader.readAsText(file);
+            } else {
+                const p = document.createElement('p');
+                p.textContent = `文件类型: ${file.type || '未知'}\n文件大小: ${formatFileSize(file.size)}`;
+                filePreviewEl.appendChild(p);
+            }
+        }
+        
+        async function convertFile() {
+            if (!selectedFile) {
+                showStatus('请先选择文件', 'error');
+                return;
+            }
+            if (!mediaConverter) {
+                showStatus('WASM模块尚未加载完成，请稍后再试', 'error');
+                return;
+            }
+            try {
+                showLoading(true);
+                showProgress(0);
+                showStatus('正在转换文件...', 'info');
+                
+                const fileBytes = await readFileAsUint8Array(selectedFile);
+                
+                
+                showStatus('正在使用WASM处理数据...', 'info');
+                let mediaDataUrl = '';
+                let mediaType = '';
+                if (targetFormat.value === 'image') {
+                    const format = imageFormat.value || 'png';
+                    mediaDataUrl = MediaConverter.file_bytes_to_image_data_url(fileBytes, format);
+                    mediaType = `image/${format}`;
+                } else if (targetFormat.value === 'audio') {
+                    mediaDataUrl = MediaConverter.file_bytes_to_audio_data_url(fileBytes);
+                    mediaType = 'audio/wav';
+                } else {
+                    throw new Error('不支持的格式');
+                }
+                
+                
+                convertedMediaData = mediaDataUrl.split(',')[1];
+                convertedMediaType = mediaType;
+                
+                
+                if (targetFormat.value === 'image') {
+                    imagePreview.src = mediaDataUrl;
+                    imagePreview.style.display = 'block';
+                    audioPlayer.style.display = 'none';
+                    videoPlayer.style.display = 'none';
+                } else if (targetFormat.value === 'audio') {
+                    audioPlayer.src = mediaDataUrl;
+                    audioPlayer.style.display = 'block';
+                    imagePreview.style.display = 'none';
+                    videoPlayer.style.display = 'none';
+                } else {
+                    
+                    videoPlayer.src = mediaDataUrl;
+                    videoPlayer.style.display = 'block';
+                    imagePreview.style.display = 'none';
+                    audioPlayer.style.display = 'none';
+                }
+                
+                downloadSection.style.display = 'block';
+                showStatus('文件转换完成', 'success');
+                showProgress(100);
+            } catch (error) {
+                console.error('转换失败:', error);
+                showStatus('文件转换失败: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function restoreFile() {
+            if (!restoreSelectedFile) {
+                showRestoreStatus('请先选择媒体文件', 'error');
+                return;
+            }
+            if (!mediaConverter) {
+                showRestoreStatus('WASM模块尚未加载完成，请稍后再试', 'error');
+                return;
+            }
+            try {
+                showRestoreLoading(true);
+                showRestoreProgress(0);
+                showRestoreStatus('正在还原文件...', 'info');
+                
+                const fileDataBase64 = await readFileAsBase64(restoreSelectedFile);
+                
+                
+                let fileBytes = new Uint8Array();
+                if (restoreMediaType.value === 'image') {
+                    const dataUrl = `data:image/png;base64,${fileDataBase64}`;
+                    fileBytes = MediaConverter.image_data_url_to_file_bytes(dataUrl);
+                } else if (restoreMediaType.value === 'audio') {
+                    const dataUrl = `data:audio/wav;base64,${fileDataBase64}`;
+                    fileBytes = MediaConverter.audio_data_url_to_file_bytes(dataUrl);
+                } else {
+                    throw new Error('不支持的媒体类型');
+                }
+                
+                
+                if (fileBytes.length === 0) {
+                    throw new Error('文件还原失败，请确保选择了有效的媒体文件');
+                }
+                
+                
+                restoredFileData = fileBytes;
+                restoreDownloadSection.style.display = 'block';
+                showRestoreStatus('文件还原完成', 'success');
+                showRestoreProgress(100);
+            } catch (error) {
+                console.error('还原失败:', error);
+                showRestoreStatus('文件还原失败: ' + error.message, 'error');
+            } finally {
+                showRestoreLoading(false);
+            }
+        }
+        
+        function downloadConvertedMedia() {
+            if (!convertedMediaData) {
+                showStatus('没有可下载的媒体数据', 'error');
+                return;
+            }
+            const a = document.createElement('a');
+            if (targetFormat.value === 'image') {
+                a.href = 'data:image/' + imageFormat.value + ';base64,' + convertedMediaData;
+                a.download = 'converted_file.' + imageFormat.value;
+            } else if (targetFormat.value === 'audio') {
+                a.href = 'data:audio/wav;base64,' + convertedMediaData;
+                a.download = 'converted_file.wav';
+            } else {
+                a.href = 'data:video/mp4;base64,' + convertedMediaData;
+                a.download = 'converted_file.mp4';
+            }
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showStatus('媒体文件已下载', 'success');
+        }
+        
+        function downloadRestoredFile() {
+            if (!restoredFileData) {
+                showRestoreStatus('没有可下载的文件数据', 'error');
+                return;
+            }
+            
+            const blob = new Blob([restoredFileData], {type: 'application/octet-stream'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'restored_file.dat';
+            document.body.appendChild(a);
+            a.click();
+            
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+            showRestoreStatus('还原文件已下载', 'success');
+        }
+        
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        
+        function readFileAsUint8Array(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const arrayBuffer = reader.result;
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    resolve(uint8Array);
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function getFileExtension(filename) {
+            return filename.substring(filename.lastIndexOf('.'));
+        }
+        
+        function showStatus(message, type) {
+            statusEl.textContent = message;
+            statusEl.className = 'status ' + type;
+        }
+        
+        function showRestoreStatus(message, type) {
+            restoreStatusEl.textContent = message;
+            restoreStatusEl.className = 'status ' + type;
+        }
+        
+        function showLoading(show) {
+            loadingEl.style.display = show ? 'block' : 'none';
+        }
+        
+        function showRestoreLoading(show) {
+            restoreLoadingEl.style.display = show ? 'block' : 'none';
+        }
+        
+        function showProgress(percent) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = percent + '%';
+            if (percent >= 100) {
+                setTimeout(() => {
+                    progressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+        
+        function showRestoreProgress(percent) {
+            restoreProgressContainer.style.display = 'block';
+            restoreProgressBar.style.width = percent + '%';
+            if (percent >= 100) {
+                setTimeout(() => {
+                    restoreProgressContainer.style.display = 'none';
+                }, 1000);
+            }
+        }
+        
+        function resetPreviews() {
+            imagePreview.style.display = 'none';
+            audioPlayer.style.display = 'none';
+            videoPlayer.style.display = 'none';
+            downloadSection.style.display = 'none';
+            convertedMediaData = null;
+        }
+    </script>
+</body>
+</html>

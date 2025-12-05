@@ -1,0 +1,27 @@
+{
+  "name": "visiwasm",
+  "version": "1.0.1",
+  "description": "A WASM-based visualization library",
+  "main": "pkg/visi_wasm_lib.js",
+  "types": "pkg/visi_wasm_lib.d.ts",
+  "files": [
+    "pkg/**/*",
+    "static/**/*",
+    "index.html"
+  ],
+  "keywords": [
+    "wasm",
+    "webassembly",
+    "visualization"
+  ],
+  "author": "lglfr-nlsidf",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "homepage": "",
+  "bugs": {
+    "url": ""
+  }
+}
