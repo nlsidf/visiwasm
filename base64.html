@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64转换工具</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --light-bg: #f8f9ff;
+            --card-bg: #ffffff;
+            --text: #333;
+            --text-light: #666;
+            --border: #e0e0e0;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --image: #4cc9f0;
+            --audio: #f72585;
+            --video: #7209b7;
+            --document: #4895ef;
+            --archive: #3a0ca3;
+            --other: #8d99ae;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #e4e7fb);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: var(--primary);
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .subtitle {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 25px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid rgba(67, 97, 238, 0.1);
+        }
+        
+        .file-area {
+            border: 3px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 25px;
+            background: rgba(67, 97, 238, 0.03);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-area::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--primary);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+        }
+        
+        .file-area:hover::before {
+            transform: translateX(0);
+        }
+        
+        .file-area.active {
+            border-color: var(--primary);
+            background: rgba(67, 97, 238, 0.08);
+        }
+        
+        .file-area i {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .file-area.active i {
+            transform: scale(1.1);
+        }
+        
+        .file-area h3 {
+            margin-bottom: 15px;
+            color: var(--text);
+            font-size: 1.4rem;
+        }
+        
+        .file-area p {
+            color: var(--text-light);
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+        
+        .file-types {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .file-type {
+            background: rgba(67, 97, 238, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: var(--primary);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.05rem;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn:hover {
+            background: var(--secondary);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            box-shadow: none;
+        }
+        
+        .btn-outline:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+        
+        .preview-container {
+            margin: 25px 0;
+            text-align: center;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .preview-content {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .audio-preview, .video-preview {
+            width: 100%;
+            margin: 15px 0;
+            border-radius: 50px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        .file-preview {
+            width: 100%;
+            padding: 30px;
+            text-align: center;
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 12px;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .file-preview i {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+        
+        .file-preview h4 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+        
+        .file-preview p {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+        
+        .progress-container {
+            height: 10px;
+            background: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+        
+        .action-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 25px;
+            justify-content: center;
+        }
+        
+        .history-item {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            border-left: 4px solid var(--primary);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            cursor: pointer;
+        }
+        
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .history-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .history-icon.image { background: rgba(76, 201, 240, 0.15); }
+        .history-icon.audio { background: rgba(247, 37, 133, 0.15); }
+        .history-icon.video { background: rgba(114, 9, 183, 0.15); }
+        .history-icon.document { background: rgba(72, 149, 239, 0.15); }
+        .history-icon.archive { background: rgba(58, 12, 163, 0.15); }
+        .history-icon.other { background: rgba(141, 153, 174, 0.15); }
+        
+        .history-icon i {
+            font-size: 1.5rem;
+        }
+        
+        .history-icon.image i { color: var(--image); }
+        .history-icon.audio i { color: var(--audio); }
+        .history-icon.video i { color: var(--video); }
+        .history-icon.document i { color: var(--document); }
+        .history-icon.archive i { color: var(--archive); }
+        .history-icon.other i { color: var(--other); }
+        
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .history-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 1.1rem;
+        }
+        
+        .history-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+            flex-wrap: wrap;
+        }
+        
+        .history-type {
+            background: var(--primary);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .history-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: #f0f2f5;
+            border: none;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .action-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .action-btn.delete:hover {
+            background: var(--warning);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 25px;
+            right: 25px;
+            padding: 18px 25px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transform: translateX(150%);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification i {
+            font-size: 1.6rem;
+        }
+        
+        .notification.success i {
+            color: #2ecc71;
+        }
+        
+        .notification.error i {
+            color: #e74c3c;
+        }
+        
+        .notification-content h4 {
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+        
+        .notification-content p {
+            font-size: 0.95rem;
+            color: #666;
+        }
+        
+        .empty-history {
+            text-align: center;
+            padding: 40px 30px;
+            color: var(--text-light);
+        }
+        
+        .empty-history i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #ddd;
+            opacity: 0.7;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 25px;
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: rgba(67, 97, 238, 0.1);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .tab:hover:not(.active) {
+            background: rgba(67, 97, 238, 0.2);
+        }
+           @media (max-width: 768px) {
+            h1 {
+                font-size: 1.9rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .file-area {
+                padding: 30px 15px;
+            }
+            
+            .btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            
+            .history-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .history-actions {
+                align-self: flex-end;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.7rem;
+            }
+            
+            .section-title {
+                font-size: 1.3rem;
+            }
+            
+            .action-section {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-file-code"></i> Base64转换工具</h1>
+            <p class="subtitle">支持所有文件类型的Base64转换，使用IndexedDB保存文件内容，历史记录中可重新下载</p>
+        </header>
+        
+        <div class="card">
+            <h2 class="section-title"><i class="fas fa-file-upload"></i> 文件转换</h2>
+            
+            <div class="file-area" id="dropArea">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <h3>拖放文件到此处(ง •̀_•́)ง</h3>
+                <p>支持所有类型的文件（图片、音频、视频、文档、压缩包等）</p>
+                <button class="btn" id="selectFileBtn">
+                    <i class="fas fa-folder-open"></i> 选择文件
+                </button>
+                <input type="file" id="fileInput" hidden>
+                
+                <div class="file-types">
+                    <div class="file-type"><i class="fas fa-image"></i> 图片</div>
+                    <div class="file-type"><i class="fas fa-music"></i> 音频</div>
+                    <div class="file-type"><i class="fas fa-video"></i> 视频</div>
+                    <div class="file-type"><i class="fas fa-file-alt"></i> 文档</div>
+                    <div class="file-type"><i class="fas fa-file-archive"></i> 压缩包</div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="preview-container">
+                <div class="preview-content">
+                    <img src="" alt="图片预览" class="image-preview" id="imagePreview">
+                    <audio controls class="audio-preview" id="audioPreview"></audio>
+                    <video controls class="video-preview" id="videoPreview"></video>
+                    <div class="file-preview" id="filePreview">
+                        <i class="fas fa-file"></i>
+                        <h4 id="fileNamePreview">文件名</h4>
+                        <p id="fileTypePreview">文件类型</p>
+                        <p id="fileSizePreview">文件大小</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-section" id="actionSection" style="display: none;">
+                <button class="btn" id="convertBtn">
+                    <i class="fas fa-exchange-alt"></i> 转换为Base64
+                </button>
+                <button class="btn" id="downloadBtn" disabled>
+                    <i class="fas fa-download"></i> 下载HTML文件
+                </button>
+                <button class="btn btn-outline" id="clearBtn">
+                    <i class="fas fa-times"></i> 清除
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="section-title">
+                <i class="fas fa-history"></i> 转换历史
+                <div style="margin-left: auto; display: flex; gap: 10px;">
+                    <button class="btn btn-outline" id="clearHistoryBtn" style="padding: 8px 15px;">
+                        <i class="fas fa-trash"></i> 清除历史
+                    </button>
+                </div>
+            </div>
+            
+            <div class="tabs" id="filterTabs">
+                <div class="tab active" data-filter="all">全部</div>
+                <div class="tab" data-filter="image">图片</div>
+                <div class="tab" data-filter="audio">音频</div>
+                <div class="tab" data-filter="video">视频</div>
+                <div class="tab" data-filter="document">文档</div>
+                <div class="tab" data-filter="archive">压缩包</div>
+                <div class="tab" data-filter="other">其他</div>
+            </div>
+            
+            <div class="history-list" id="historyList">
+                <div class="empty-history">
+                    <i class="fas fa-history"></i>
+                    <h3>暂无历史记录( •̥́ ˍ •̀ू )</h3>
+                    <p>转换的文件将出现在这里</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>© 小鄢鄢 | 增强版Base64转换工具 | 使用IndexedDB保存文件内容，历史记录中可重新下载</p>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <div class="notification-content">
+            <h4>操作‼(•'╻'• ۶)۶成功</h4>
+            <p>文件已成功转换并下载</p>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM元素
+            const fileInput = document.getElementById('fileInput');
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const dropArea = document.getElementById('dropArea');
+            const convertBtn = document.getElementById('convertBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const clearBtn = document.getElementById('clearBtn');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+            const imagePreview = document.getElementById('imagePreview');
+            const audioPreview = document.getElementById('audioPreview');
+            const videoPreview = document.getElementById('videoPreview');
+            const filePreview = document.getElementById('filePreview');
+            const fileNamePreview = document.getElementById('fileNamePreview');
+            const fileTypePreview = document.getElementById('fileTypePreview');
+            const fileSizePreview = document.getElementById('fileSizePreview');
+            const progressBar = document.getElementById('progressBar');
+            const historyList = document.getElementById('historyList');
+            const notification = document.getElementById('notification');
+            const filterTabs = document.getElementById('filterTabs');
+            const actionSection = document.getElementById('actionSection');
+            
+            // 当前文件变量
+            let currentFile = null;
+            let currentBase64 = null;
+            let currentFileName = '';
+            let currentFileType = '';
+            let currentFileCategory = '';
+            let db = null;
+            
+            // 初始化IndexedDB
+            const initDB = () => {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open('Base64ConverterDB', 1);
+                    
+                    request.onerror = (event) => {
+                        console.error('IndexedDB打开失败:', event.target.error);
+                        reject(event.target.error);
+                    };
+                    
+                    request.onsuccess = (event) => {
+                        db = event.target.result;
+                        console.log('IndexedDB已打开');
+                        resolve();
+                    };
+                    
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            const store = db.createObjectStore('files', { keyPath: 'id', autoIncrement: true });
+                            store.createIndex('name', 'name', { unique: false });
+                            store.createIndex('type', 'type', { unique: false });
+                            store.createIndex('category', 'category', { unique: false });
+                            store.createIndex('date', 'date', { unique: false });
+                        }
+                    };
+                });
+            };
+            
+            // 初始化
+            initDB().then(() => {
+                loadHistory();
+            }).catch(error => {
+                console.error('数据库初始化失败:', error);
+                showNotification('数据库初始化失败，部分功能可能受限', 'error');
+            });
+            
+            // 事件监听
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+            convertBtn.addEventListener('click', convertToBase64);
+            downloadBtn.addEventListener('click', downloadHTML);
+            clearBtn.addEventListener('click', clearAll);
+            clearHistoryBtn.addEventListener('click', clearHistory);
+            
+            // 标签过滤
+            filterTabs.addEventListener('click', (e) => {
+                if (e.target.classList.contains('tab')) {
+                    const tabs = filterTabs.querySelectorAll('.tab');
+                    tabs.forEach(tab => tab.classList.remove('active'));
+                    e.target.classList.add('active');
+                    loadHistory(e.target.getAttribute('data-filter'));
+                }
+            });
+            
+            // 拖放事件
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => {
+                    dropArea.classList.add('active');
+                }, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => {
+                    dropArea.classList.remove('active');
+                }, false);
+            });
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length) {
+                    handleFiles(files[0]);
+                }
+            }
+            
+            function handleFileSelect(e) {
+                if (e.target.files.length) {
+                    handleFiles(e.target.files[0]);
+                }
+            }
+            
+            function getFileCategory(type) {
+                if (!type) return 'other';
+                if (type.startsWith('image/')) return 'image';
+                if (type.startsWith('audio/')) return 'audio';
+                if (type.startsWith('video/')) return 'video';
+                if (type === 'application/pdf' || 
+                    type === 'application/msword' || 
+                    type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                    type === 'application/vnd.ms-excel' || 
+                    type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                    type === 'application/vnd.ms-powerpoint' || 
+                    type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+                    type === 'text/plain' ||
+                    type.startsWith('text/')) {
+                    return 'document';
+                }
+                if (type === 'application/zip' || 
+                    type === 'application/x-rar-compressed' || 
+                    type === 'application/x-tar' || 
+                    type === 'application/x-7z-compressed' || 
+                    type === 'application/gzip') {
+                    return 'archive';
+                }
+                return 'other';
+            }
+            
+            function handleFiles(file) {
+                // 重置预览
+                imagePreview.style.display = 'none';
+                audioPreview.style.display = 'none';
+                videoPreview.style.display = 'none';
+                filePreview.style.display = 'none';
+                
+                currentFile = file;
+                currentFileName = file.name;
+                currentFileType = file.type || 'application/octet-stream';
+                currentFileCategory = getFileCategory(currentFileType);
+                
+                // 显示操作区域
+                actionSection.style.display = 'flex';
+                
+                // 显示文件信息
+                fileNamePreview.textContent = file.name;
+                fileTypePreview.textContent = currentFileType || '未知类型';
+                fileSizePreview.textContent = formatFileSize(file.size);
+                
+                // 显示预览
+                if (currentFileCategory === 'image') {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        imagePreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else if (currentFileCategory === 'audio') {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        audioPreview.src = e.target.result;
+                        audioPreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else if (currentFileCategory === 'video') {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        videoPreview.src = e.target.result;
+                        videoPreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    filePreview.style.display = 'block';
+                    const icon = filePreview.querySelector('i');
+                    
+                    switch(currentFileCategory) {
+                        case 'document':
+                            icon.className = 'fas fa-file-alt';
+                            break;
+                        case 'archive':
+                            icon.className = 'fas fa-file-archive';
+                            break;
+                        default:
+                            icon.className = 'fas fa-file';
+                    }
+                }
+                
+                // 更新按钮状态
+                convertBtn.disabled = false;
+                downloadBtn.disabled = true;
+                progressBar.style.width = '0%';
+            }
+            
+            function convertToBase64() {
+                if (!currentFile) return;
+                
+                // 重置进度条
+                progressBar.style.width = '0%';
+                
+                // 模拟转换过程
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 5;
+                    progressBar.style.width = `${progress}%`;
+                    
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        
+                        // 实际转换
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            currentBase64 = reader.result.split(',')[1];
+                            
+                            // 启用下载按钮
+                            downloadBtn.disabled = false;
+                            
+                            // 显示成功通知
+                            showNotification('文件转换成功٩(๑•ㅂ•)۶！', 'success');
+                        };
+                        reader.readAsDataURL(currentFile);
+                    }
+                }, 100);
+            }
+            
+            function downloadHTML() {
+                if (!currentBase64) return;
+                
+                let htmlContent = '';
+                let extension = currentFileType.split('/')[1] || 'bin';
+                
+                // 根据文件类型生成不同的HTML内容
+                switch(currentFileCategory) {
+                    case 'image':
+                        htmlContent = `
+                            <!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>${currentFileName}</title>
+                                <style>
+                                    body { 
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        min-height: 100vh;
+                                        margin: 0;
+                                        background: #f5f7fa;
+                                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                    }
+                                    img {
+                                        max-width: 90%;
+                                        max-height: 90vh;
+                                        border-radius: 8px;
+                                        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <img src="data:image/${extension};base64,${currentBase64}" alt="${currentFileName}">
+                            </body>
+                            </html>
+                        `;
+                        break;
+                        
+                    case 'audio':
+                        htmlContent = `
+                            <!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>${currentFileName}</title>
+                                <style>
+                                    body { 
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        min-height: 100vh;
+                                        margin: 0;
+                                        background: #1a2a6c;
+                                        background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+                                    }
+                                    .player {
+                                        width: 90%;
+                                        max-width: 500px;
+                                        padding: 30px;
+                                        background: white;
+                                        border-radius: 15px;
+                                        text-align: center;
+                                        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                                    }
+                                    audio {
+                                        width: 100%;
+                                        margin-top: 20px;
+                                    }
+                                    h1 {
+                                        margin-bottom: 20px;
+                                        color: #333;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="player">
+                                    <h1>${currentFileName}</h1>
+                                    <audio controls>
+                                        <source src="data:audio/${extension};base64,${currentBase64}" type="audio/${extension}">
+                                        您的浏览器不支持音频播放
+                                    </audio>
+                                </div>
+                            </body>
+                            </html>
+                        `;
+                        break;
+                        
+                    case 'video':
+                        htmlContent = `
+                            <!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>${currentFileName}</title>
+                                <style>
+                                    body { 
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        min-height: 100vh;
+                                        margin: 0;
+                                        background: #1a2a6c;
+                                        background: linear-gradient(to right, #1a2a6c, #b21f1f, #fdbb2d);
+                                    }
+                                    .player {
+                                        width: 90%;
+                                        max-width: 500px;
+                                        padding: 30px;
+                                        background: white;
+                                        border-radius: 15px;
+                                        text-align: center;
+                                        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                                    }
+                                    video {
+                                        width: 100%;
+                                        max-height: 80vh;
+                                        border-radius: 8px;
+                                    }
+                                    h1 {
+                                        margin-bottom: 20px;
+                                        color: #333;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="player">
+                                    <h1>${currentFileName}</h1>
+                                    <video controls>
+                                        <source src="data:video/${extension};base64,${currentBase64}" type="video/${extension}">
+                                        您的浏览器不支持视频播放
+                                    </video>
+                                </div>
+                            </body>
+                            </html>
+                        `;
+                        break;
+                        
+                    default: // 文档/压缩包/其他文件
+                        htmlContent = `
+                            <!DOCTYPE html>
+                            <html lang="en">
+                            <head>
+                                <meta charset="UTF-8">
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                                <title>${currentFileName}</title>
+                                <style>
+                                    body { 
+                                        display: flex;
+                                        justify-content: center;
+                                        align-items: center;
+                                        min-height: 100vh;
+                                        margin: 0;
+                                        background: #f5f7fa;
+                                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                        text-align: center;
+                                        background: linear-gradient(135deg, #f5f7fa, #e4e7fb);
+                                    }
+                                    .container {
+                                        background: white;
+                                        padding: 40px;
+                                        border-radius: 15px;
+                                        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                                        max-width: 500px;
+                                        width: 90%;
+                                    }
+                                    h1 {
+                                        color: #333;
+                                        margin-bottom: 20px;
+                                        font-size: 1.8rem;
+                                    }
+                                    p {
+                                        color: #666;
+                                        margin-bottom: 30px;
+                                        font-size: 1.1rem;
+                                    }
+                                    .btn {
+                                        display: inline-block;
+                                        padding: 14px 30px;
+                                        background: #4361ee;
+                                        color: white;
+                                        text-decoration: none;
+                                        border-radius: 8px;
+                                        font-weight: 600;
+                                        transition: all 0.3s;
+                                        font-size: 1.1rem;
+                                        border: none;
+                                        cursor: pointer;
+                                        box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+                                    }
+                                    .btn:hover {
+                                        background: #3a0ca3;
+                                        transform: translateY(-3px);
+                                        box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+                                    }
+                                    i {
+                                        font-size: 4rem;
+                                        color: #4361ee;
+                                        margin-bottom: 20px;
+                                    }
+                                </style>
+                            </head>
+                            <body>
+                                <div class="container">
+                                    <i class="fas fa-file-download"></i>
+                                    <h1>${currentFileName}</h1>
+                                    <p>此文件类型不支持预览，请下载后查看</p>
+                                    <a href="data:${currentFileType};base64,${currentBase64}" download="${currentFileName}" class="btn">
+                                        <i class="fas fa-download"></i> 下载文件
+                                    </a>
+                                </div>
+                            </body>
+                            </html>
+                        `;
+                }
+                
+                // 创建Blob和下载链接
+                const blob = new Blob([htmlContent], {type: 'text/html'});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${currentFileName.split('.')[0]}.html`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // 清理
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 100);   // 添加到历史记录
+                addToHistory({
+                    name: currentFileName,
+                    type: currentFileType,
+                    category: currentFileCategory,
+                    size: currentFile.size,
+                    date: new Date().toISOString(),
+                    base64: currentBase64
+                });
+                
+                // 显示下载成功通知
+                showNotification('HTML文件下载成功！', 'success');
+            }
+            
+            function clearAll() {
+                // 重置所有状态
+                fileInput.value = '';
+                currentFile = null;
+                currentBase64 = null;
+                currentFileName = '';
+                currentFileType = '';
+                
+                // 隐藏预览和操作区域
+                imagePreview.style.display = 'none';
+                audioPreview.style.display = 'none';
+                videoPreview.style.display = 'none';
+                filePreview.style.display = 'none';
+                actionSection.style.display = 'none';
+                
+                // 重置进度条
+                progressBar.style.width = '0%';
+                
+                // 重置按钮状态
+                convertBtn.disabled = false;
+                downloadBtn.disabled = true;
+                
+                // 移除拖放区域高亮
+                dropArea.classList.remove('active');
+            }
+            
+            // 添加到历史记录
+            function addToHistory(item) {
+                // 保存到IndexedDB
+                const transaction = db.transaction(['files'], 'readwrite');
+                const store = transaction.objectStore('files');
+                
+                const request = store.add({
+                    name: item.name,
+                    type: item.type,
+                    category: item.category,
+                    size: item.size,
+                    date: item.date,
+                    base64: item.base64
+                });
+                
+                request.onsuccess = () => {
+                    // 保存到localStorage的只是元数据（不包含base64内容）
+                    let history = JSON.parse(localStorage.getItem('base64History') || '[]');
+                    
+                    // 只保留最后256条记录
+                    if (history.length >= 256) {
+                        history.shift();
+                    }
+                    
+                    // 添加ID（使用IndexedDB生成的key）
+                    item.id = request.result;
+                    history.push(item);
+                    
+                    localStorage.setItem('base64History', JSON.stringify(history));
+                    loadHistory();
+                };
+            }
+            
+            // 加载历史记录
+            function loadHistory(filter = 'all') {
+                // 先从IndexedDB获取所有记录的ID
+                const transaction = db.transaction(['files'], 'readonly');
+                const store = transaction.objectStore('files');
+                const index = store.index('date');  // 按日期排序
+                
+                const request = index.openCursor(null, 'prev');  // 逆序获取
+                
+                let history = [];
+                
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor) {
+                        // 从Cursor中提取数据并添加到历史记录数组
+                        history.push({
+                            id: cursor.value.id,
+                            name: cursor.value.name,
+                            type: cursor.value.type,
+                            category: cursor.value.category,
+                            size: cursor.value.size,
+                            date: cursor.value.date
+                        });
+                        
+                        // 继续获取下一条记录
+                        cursor.continue();
+                    } else {
+                        // 所有记录已加载
+                        // 更新localStorage中的历史记录元数据
+                        localStorage.setItem('base64History', JSON.stringify(history));
+                        
+                        // 渲染历史记录
+                        renderHistory(history, filter);
+                    }
+                };
+                
+                request.onerror = (event) => {
+                    console.error('加载历史记录失败:', event.target.error);
+                    showNotification('加载历史记录失败', 'error');
+                    
+                    // 如果IndexedDB加载失败，尝试从localStorage加载
+                    const localHistory = JSON.parse(localStorage.getItem('base64History') || '[]');
+                    renderHistory(localHistory, filter);
+                };
+            }
+            
+            // 渲染历史记录
+            function renderHistory(history, filter = 'all') {
+                historyList.innerHTML = '';
+                
+                // 应用过滤
+                const filteredHistory = filter === 'all' 
+                    ? history 
+                    : history.filter(item => item.category === filter);
+                
+                if (filteredHistory.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="empty-history">
+                            <i class="fas fa-history"></i>
+                            <h3>暂无历史记录</h3>
+                            <p>${filter === 'all' ? '转换的文件将出现在这里' : '此分类下没有历史记录'}</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                filteredHistory.forEach((item) => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.setAttribute('data-id', item.id);
+                    historyItem.innerHTML = `
+                        <div class="history-icon ${item.category}">
+                            <i class="${getHistoryIcon(item.category)}"></i>
+                        </div>
+                        <div class="history-info">
+                            <div class="history-name" title="${item.name}">${item.name}</div>
+                            <div class="history-meta">
+                                <span><i class="fas fa-calendar"></i> ${new Date(item.date).toLocaleString()}</span>
+                                <span><i class="fas fa-weight-hanging"></i> ${formatFileSize(item.size)}</span>
+                                <span class="history-type">${getTypeName(item.category)}</span>
+                            </div>
+                        </div>
+                        <div class="history-actions">
+                            <button class="action-btn download-history" title="重新下载">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn delete delete-history" title="删除记录">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    historyList.appendChild(historyItem);
+                    
+                    // 添加点击事件（重新下载）
+                    historyItem.querySelector('.download-history').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        downloadHistoryItem(item.id);
+                    });
+                    
+                    // 添加删除按钮事件
+                    historyItem.querySelector('.delete-history').addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const id = item.id;
+                        deleteHistoryItem(id);
+                    });
+                    
+                    // 添加点击整个条目事件（重新下载）
+                    historyItem.addEventListener('click', function(e) {
+                        if (!e.target.closest('.action-btn')) {
+                            downloadHistoryItem(item.id);
+                        }
+                    });
+                });
+            }
+            
+            function getHistoryIcon(category) {
+                switch(category) {
+                    case 'image': return 'fas fa-image';
+                    case 'audio': return 'fas fa-music';
+                    case 'video': return 'fas fa-video';
+                    case 'document': return 'fas fa-file-alt';
+                    case 'archive': return 'fas fa-file-archive';
+                    default: return 'fas fa-file';
+                }
+            }
+            
+            function getTypeName(category) {
+                switch(category) {
+                    case 'image': return '图片';
+                    case 'audio': return '音频';
+                    case 'video': return '视频';
+                    case 'document': return '文档';
+                    case 'archive': return '压缩包';
+                    default: return '其他';
+                }
+            }
+            
+            // 从历史记录下载文件
+            function downloadHistoryItem(id) {
+                const transaction = db.transaction(['files'], 'readonly');
+                const store = transaction.objectStore('files');
+                const request = store.get(Number(id));
+                
+                request.onsuccess = (event) => {
+                    const item = event.target.result;
+                    if (item) {
+                        // 设置当前文件信息
+                        currentFileName = item.name;
+                        currentFileType = item.type;
+                        currentBase64 = item.base64;
+                        currentFileCategory = item.category;
+                        
+                        // 触发下载
+                        downloadHTML();
+                        
+                        showNotification('文件已重新下载', 'success');
+                    } else {
+                        showNotification('未找到文件记录', 'error');
+                    }
+                };
+                
+                request.onerror = (event) => {
+                    console.error('获取文件失败:', event.target.error);
+                    showNotification('获取文件失败', 'error');
+                };
+            }
+            
+            // 删除历史记录项
+            function deleteHistoryItem(id) {
+                // 从IndexedDB中删除
+                const transaction = db.transaction(['files'], 'readwrite');
+                const store = transaction.objectStore('files');
+                const request = store.delete(Number(id));
+                
+                request.onsuccess = () => {
+                    // 从localStorage中删除
+                    let history = JSON.parse(localStorage.getItem('base64History') || '[]');
+                    history = history.filter(item => item.id != id);
+                    localStorage.setItem('base64History', JSON.stringify(history));
+                    
+                    loadHistory();
+                    showNotification('历史记录已删除(´•ω•̥`)', 'success');
+                };
+                
+                request.onerror = (event) => {
+                    console.error('删除文件失败:', event.target.error);
+                    showNotification('删除文件失败', 'error');
+                };
+            }
+            
+            // 清除历史记录
+            function clearHistory() {
+                if (!confirm('确定要清除所有历史记录吗？')) return;
+                
+                // 清除IndexedDB
+                const transaction = db.transaction(['files'], 'readwrite');
+                const store = transaction.objectStore('files');
+                const request = store.clear();
+                
+                request.onsuccess = () => {
+                    // 清除localStorage
+                    localStorage.removeItem('base64History');
+                    loadHistory();
+                    showNotification('历史记录已清除', 'success');
+                };
+                
+                request.onerror = (event) => {
+                    console.error('清除历史记录失败:', event.target.error);
+                    showNotification('清除历史记录失败', 'error');
+                };
+            }
+            
+            // 格式化文件大小
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            // 显示通知
+            function showNotification(message, type = 'success') {
+                const notification = document.getElementById('notification');
+                notification.className = `notification show ${type}`;
+                
+                const icon = notification.querySelector('i');
+                const title = notification.querySelector('.notification-content h4');
+                const content = notification.querySelector('.notification-content p');
+                
+                icon.className = type === 'success' 
+                    ? 'fas fa-check-circle' 
+                    : 'fas fa-exclamation-circle';
+                
+                title.textContent = type === 'success' ? '操作成功' : '发生错误';
+                content.textContent = message;
+                
+                // 显示通知
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+                
+                // 3秒后隐藏通知
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
